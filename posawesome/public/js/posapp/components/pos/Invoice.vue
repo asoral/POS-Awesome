@@ -2479,7 +2479,7 @@ export default {
         (!this.discount_percentage_offer_name ||
           this.discount_percentage_offer_name == offer.name) &&
         offer.discount_percentage > 0 &&
-        offer.discount_percentage <= 100
+        offer.discount_percentage <= 100 && offer.discount_type === "Discount Percentage"
       ) {
         this.discount_amount = this.flt(
           (flt(this.Total) * flt(offer.discount_percentage)) / 100,
@@ -2487,6 +2487,9 @@ export default {
         );
         this.discount_percentage_offer_name = offer.name;
       }
+      if (offer.discount_type === "Discount Amount") {
+              this.discount_amount = offer.discount_amount;
+          }
     },
 
     RemoveOnTotal(offer) {
