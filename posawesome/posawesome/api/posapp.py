@@ -529,7 +529,8 @@ def update_invoice(data):
         if invoice_doc.get("taxes"):
             for tax in invoice_doc.taxes:
                 tax.included_in_print_rate = 1
-
+    if data.get("discount_amount") >0:
+        invoice_doc.discount_amount=data.get("discount_amount")
     invoice_doc.save()
     return invoice_doc
 
