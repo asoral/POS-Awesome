@@ -533,7 +533,7 @@ def update_invoice(data):
         # if invoice_doc.pos_profile:
         #     doc=frappe.get_doc("POS Profile")
         total=invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
-        per=(data.get("discount_amount")/total)*100
+        per=(data.get("discount_amount")/(total+data.get("discount_amount")))*100
         invoice_doc.additional_discount_percentage=round(per,2)
         invoice_doc.discount_amount=data.get("discount_amount")
     invoice_doc.save()
