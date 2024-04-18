@@ -928,29 +928,69 @@ export default {
       });
     },
     load_print_page() {
-      const print_format =
-        this.pos_profile.print_format_for_online ||
-        this.pos_profile.print_format;
-      const letter_head = this.pos_profile.letter_head || 0;
-      const url =
-        frappe.urllib.get_base_url() +
-        "/printview?doctype=Sales%20Invoice&name=" +
-        this.invoice_doc.name +
-        "&trigger_print=1" +
-        "&format=" +
-        print_format +
-        "&no_letterhead=" +
-        letter_head;
-      const printWindow = window.open(url, "Print");
-      printWindow.addEventListener(
-        "load",
-        function () {
-          printWindow.print();
-          // printWindow.close();
-          // NOTE : uncomoent this to auto closing printing window
-        },
-        true
-      );
+      // const print_format =
+      //   this.pos_profile.print_format_for_online ||
+      //   this.pos_profile.print_format;
+      // const letter_head = this.pos_profile.letter_head || 0;
+      // const url =
+      //   frappe.urllib.get_base_url() +
+      //   "/printview?doctype=Sales%20Invoice&name=" +
+      //   this.invoice_doc.name +
+      //   "&trigger_print=1" +
+      //   "&format=" +
+      //   print_format +
+      //   "&no_letterhead=" +
+      //   letter_head;
+      // const printWindow = window.open(url, "Print");
+      // printWindow.addEventListener(
+      //   "load",
+      //   function () {
+      //     printWindow.print();
+      //     // printWindow.close();
+      //     // NOTE : uncomoent this to auto closing printing window
+      //   },
+      //   true
+      // );
+      frappe.ui.form.qz_get_printer_list().then(function(printers){
+				var config;
+				printers.forEach(function(printer){
+					if(printer == window.raw_printer){
+						config = qz.configs.create(printer);
+					}
+				});
+      
+    data=`{% set ESC_INIT = "\x1B\x40" %}{% set ESC_ALIGN_CENTER = "\x1B\x61\x01" %}{% set ESC_ALIGN_LEFT = "\x1B\x61\x00" %}{% set ESC_ALIGN_RIGHT="\x1b\x61\x02"%}{% set ESC_BOLD_ON = "\x1B\x45\x01" %}{% set ESC_BOLD_OFF = "\x1B\x45\x00" %}{% set ESC_LINE_FEED = "\x0A" %}{% set ESC_DOUBLE_HEIGHT = "\x1B\x21\x10" %}{% set ESC_DOUBLE_WIDTH = "\x1B\x21\x20" %}{% set ESC_NORMAL_HEIGHT = "\x1B\x21\x00" %}{% set ESC_NORMAL_WIDTH = "\x1B\x21\x00" %}{% set ESC_TAB = "\x09" %}{% set line_spacing_dots = 0 %}{% set top_margin_lines = 0 %}{% set esc_pos_command = "\x1B\x33" + line_spacing_dots|string + " " %}{% set top_margin_command = ESC_LINE_FEED * top_margin_lines %}{% set smaller_font_sequence = "\x1D\x76\x01" %}{% set ESC_MIN_TOP_MARGIN = "\x1B[0d" %}{% set tab1 = "\x1B\x44\x10\x20\x26\x00" %}{% set tab2 = "\x1B\x44\x10\x20\x28\x2C\x00" %}
+{{ ESC_INIT }}{{ ESC_ALIGN_CENTER }}{{ ESC_BOLD_ON }}{{ doc.company }}{{ ESC_LINE_FEED }}{{ _("Invoice") }}{{ ESC_BOLD_OFF }}
+{{ ESC_ALIGN_LEFT }}{{ ESC_BOLD_ON }}Receipt No:{{ ESC_BOLD_OFF }} {{ doc.name }}{{ ESC_LINE_FEED }}{{ ESC_BOLD_ON }}Cashier:{{ ESC_BOLD_OFF }} {{ doc.owner}}{{ ESC_LINE_FEED }}{{ ESC_BOLD_ON }}Customer:{{ ESC_BOLD_OFF }} {{ doc.customer_name}}{{ ESC_LINE_FEED }}{{ ESC_BOLD_ON }}Date:{{ ESC_BOLD_OFF }} {{ doc.get_formatted("posting_date")}}{{ ESC_LINE_FEED }}{{ ESC_BOLD_ON }}Time: {{ ESC_BOLD_OFF}}{{ doc.get_formatted("posting_time")}}
+-----------------------------------
+{{tab2}}{{ ESC_BOLD_ON }}Item{{"\t"}}Qty{{"\t"}}{{ ESC_ALIGN_RIGHT }}Amount{{ ESC_BOLD_OFF }}
+-----------------------------------
+{% for item in doc.items %}{{tab1}}{{ ESC_ALIGN_LEFT }}{{ item.item_name | wordwrap(width=15) }}{{"\t"}}{{ item.qty }}@{{ item.rate }}{{"\t"}}{{ ESC_ALIGN_RIGHT }}{{ item.amount }}{{ ESC_ALIGN_LEFT }}{{ ESC_LINE_FEED }}---------------------------------{{ ESC_LINE_FEED }}{% endfor %}
+{% if doc.flags.show_inclusive_tax_in_print %}{{ ESC_ALIGN_RIGHT }}{{ ESC_BOLD_ON }}Total Excl. Tax:{{ ESC_BOLD_OFF }}{{ doc.net_total}}{% else %}{{ ESC_ALIGN_RIGHT }}{{ ESC_BOLD_ON }}Total:{{ ESC_BOLD_OFF }}{{ doc.total }}{% endif %} {{ ESC_LINE_FEED }}---------------------------------
+{% for row in doc.taxes %}{% if not row.included_in_print_rate or doc.flags.show_inclusive_tax_in_print %}{{ ESC_NORMAL_HEIGHT }}{{ ESC_ALIGN_RIGHT }}{{ ESC_BOLD_ON }}{{row.description}}@{{row.rate}}%:{{ ESC_BOLD_OFF }} {{ row.tax_amount}} {{ ESC_LINE_FEED }}---------------------------------{{ ESC_LINE_FEED }}{% endif %}{% endfor %}
+{{ ESC_ALIGN_RIGHT }}{% if doc.discount_amount %}{{ ESC_BOLD_ON }}Discount:{{ ESC_BOLD_OFF }}{{ doc.discount_amount}} {{ ESC_LINE_FEED }}---------------------------------{{ ESC_LINE_FEED }}{% endif %}{{ ESC_BOLD_ON }}Grand Total:{{ ESC_BOLD_OFF }}{{ doc.grand_total}}{{ ESC_LINE_FEED }}---------------------------------
+{% if doc.rounded_total %}{{ ESC_ALIGN_RIGHT }}{{ ESC_BOLD_ON }}Rounded Total:{{ ESC_BOLD_OFF }}{{ doc.rounded_total}} {{ ESC_LINE_FEED }}---------------------------------{% endif %}
+{% for row in doc.payments %}{{ ESC_ALIGN_RIGHT }}{{ ESC_BOLD_ON }}{{ row.mode_of_payment }}:{{ ESC_BOLD_OFF }}{{ row.amount}} {{ ESC_LINE_FEED }}---------------------------------{{ ESC_LINE_FEED }}{% endfor %}
+{{ ESC_ALIGN_RIGHT }}{{ ESC_BOLD_ON }}Paid Amount:{{ ESC_BOLD_OFF }}{{ doc.paid_amount }}{{ ESC_LINE_FEED }}---------------------------------
+{% if doc.change_amount %}{{ ESC_ALIGN_RIGHT }}{{ ESC_BOLD_ON }}Change Amount:{{ ESC_BOLD_OFF }}{{ doc.change_amount}}{{ ESC_LINE_FEED }}---------------------------------{% endif %}
+{{ ESC_ALIGN_LEFT }}{{ _("Goods once sold, will not be taken back") }}
+{{ _("Guilt-free goodness starts here") }}
+{{ _("Enjoy your flyberry goodies!") }}
+{{ _("hello@flyberry.in , +919700919999") }}
+{{ _("This is a system-generated invoice that does not need to be signed.") }}
+{{ ESC_ALIGN_CENTER }} {{ _("Thank you, please visit again.") }}
+{{ ESC_LINE_FEED }}
+{{ ESC_LINE_FEED }}
+{{ ESC_LINE_FEED }}`
+    frappe.ui.form.qz_connect()
+    .then(function () {
+        return qz.print(config, data);
+    })
+    .then(frappe.ui.form.qz_success)
+    .catch(err => {
+        frappe.ui.form.qz_fail(err);
+    });
+  })
     },
     validate_due_date() {
       const today = frappe.datetime.now_date();
