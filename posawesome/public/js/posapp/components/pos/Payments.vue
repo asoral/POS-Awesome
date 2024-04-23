@@ -944,86 +944,74 @@ export default {
 			return [];
 		}
 	},
-    load_print_page() {
-      // const print_format =
-      //   this.pos_profile.print_format_for_online ||
-      //   this.pos_profile.print_format;
-      // const letter_head = this.pos_profile.letter_head || 0;
-      // const url =
-      //   frappe.urllib.get_base_url() +
-      //   "/printview?doctype=Sales%20Invoice&name=" +
-      //   this.invoice_doc.name +
-      //   "&trigger_print=1" +
-      //   "&format=" +
-      //   print_format +
-      //   "&no_letterhead=" +
-      //   letter_head;
-      // const printWindow = window.open(url, "Print");
-      // printWindow.addEventListener(
-      //   "load",
-      //   function () {
-      //     printWindow.print();
-      //     // printWindow.close();
-      //     // NOTE : uncomoent this to auto closing printing window
-      //   },
-      //   true
-      // );
-     
-      let me = this;
-        console.log("&&&&&&&&&&&&&&&&&&&&&&&&&",this)
-		if (cint(me.print_settings.enable_print_server)) {
-			if (localStorage.getItem('network_printer')) {
-				me.print_by_server();
-			} else {
-				me.network_printer_setting_dialog(() => me.print_by_server());
-			}
-		} else if (me.get_mapped_printer().length === 1) {
-			// printer is already mapped in localstorage (applies for both raw and pdf )
-			if (me.is_raw_printing()) {
-				me.get_raw_commands(function(out) {
-					frappe.ui.form
-						.qz_connect()
-						.then(function() {
-							let printer_map = me.get_mapped_printer()[0];
-							let data = [out.raw_commands];
-							let config = qz.configs.create(printer_map.printer);
-							return qz.print(config, data);
-						})
-						.then(frappe.ui.form.qz_success)
-						.catch((err) => {
-							frappe.ui.form.qz_fail(err);
-						});
-				});
-			} else {
-				frappe.show_alert(
-					{
-						message: __('PDF printing via "Raw Print" is not supported.'),
-						subtitle: __(
-							'Please remove the printer mapping in Printer Settings and try again.'
-						),
-						indicator: 'info',
-					},
-					14
-				);
-				//Note: need to solve "Error: Cannot parse (FILE)<URL> as a PDF file" to enable qz pdf printing.
-			}
-		} else if (me.is_raw_printing()) {
-			// printer not mapped in localstorage and the current print format is raw printing
-			frappe.show_alert(
-				{
-					message: __('Printer mapping not set.'),
-					subtitle: __(
-						'Please set a printer mapping for this print format in the Printer Settings'
-					),
-					indicator: 'warning',
-				},
-				14
-			);
-			me.printer_setting_dialog();
-		} else {
-			me.render_page('/printview?', true);
+  get_print_format_printer_map() {
+		// returns the whole object "print_format_printer_map" stored in the localStorage.
+		try {
+			let print_format_printer_map = JSON.parse(localStorage.print_format_printer_map);
+			return print_format_printer_map;
+		} catch (e) {
+			return {};
 		}
-    },
+	},
+  get_raw_commands(callback) {
+    // fetches rendered raw commands from the server for the current print format.
+    frappe.call({
+      method: 'frappe.www.printview.get_rendered_raw_commands',
+      args: {
+        doc: this.invoice_doc,
+        print_format: this.pos_profile.print_format,
+        _lang: "en",
+      },
+      callback: function(r) {
+        if (!r.exc) {
+          callback(r.message);
+        }
+      },
+    });
+  },
+  load_print_page() {
+    console.log("PRINT IT>>>>>>>>>>>")
+    // const print_format =
+    //   this.pos_profile.print_format_for_online ||
+    //   this.pos_profile.print_format;
+    // const letter_head = this.pos_profile.letter_head || 0;
+    // const url =
+    //   frappe.urllib.get_base_url() +
+    //   "/printview?doctype=Sales%20Invoice&name=" +
+    //   this.invoice_doc.name +
+    //   "&trigger_print=1" +
+    //   "&format=" +
+    //   print_format +
+    //   "&no_letterhead=" +
+    //   letter_head;
+    // const printWindow = window.open(url, "Print");
+    // printWindow.addEventListener(
+    //   "load",
+    //   function () {
+    //     printWindow.print();
+    //     // printWindow.close();
+    //     // NOTE : uncomoent this to auto closing printing window
+    //   },
+    //   true
+    // );
+    
+    me.get_raw_commands(function (out) {
+        console.log("RAW COMMANDS____________",out.raw_commands)
+        frappe.ui.form
+          .qz_connect()
+          .then(function () {
+            let printer_map = me.get_mapped_printer()[0];
+            let data = [out.raw_commands];
+            let config = qz.configs.create(printer_map.printer);
+            return qz.print(config, data);
+          })
+          .then(frappe.ui.form.qz_success)
+          .catch((err) => {
+            frappe.ui.form.qz_fail(err);
+          });
+      });
+  },
+    
     validate_due_date() {
       const today = frappe.datetime.now_date();
       const parse_today = Date.parse(today);
