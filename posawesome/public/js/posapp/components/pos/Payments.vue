@@ -995,7 +995,7 @@ export default {
     //   true
     // );
     
-    get_raw_commands(function (out) {
+    this.get_raw_commands(function (out) {
         console.log("RAW COMMANDS____________",out.raw_commands)
         frappe.ui.form
           .qz_connect()
