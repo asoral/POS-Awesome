@@ -1000,7 +1000,7 @@ export default {
         frappe.ui.form
           .qz_connect()
           .then(function () {
-            let printer_map = me.get_mapped_printer()[0];
+            let printer_map = this.get_mapped_printer()[0];
             let data = [out.raw_commands];
             let config = qz.configs.create(printer_map.printer);
             return qz.print(config, data);
