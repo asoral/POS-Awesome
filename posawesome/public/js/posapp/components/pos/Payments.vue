@@ -936,6 +936,7 @@ export default {
     get_mapped_printer() {
 		// returns a list of "print format: printer" mapping filtered by the current print format
 		let print_format_printer_map = this.get_print_format_printer_map();
+    console.log("########################",print_format_printer_map)
 		if (print_format_printer_map["Sales Invoice"]) {
 			return print_format_printer_map["Sales Invoice"].filter(
 				(printer_map) => printer_map.print_format == this.selected_format()
@@ -948,8 +949,10 @@ export default {
 		// returns the whole object "print_format_printer_map" stored in the localStorage.
 		try {
 			let print_format_printer_map = JSON.parse(localStorage.print_format_printer_map);
+      console.log("########################get Print",print_format_printer_map)
 			return print_format_printer_map;
 		} catch (e) {
+      console.log("########################not get Print")
 			return {};
 		}
 	},
