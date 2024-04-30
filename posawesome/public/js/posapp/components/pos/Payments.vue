@@ -929,15 +929,15 @@ export default {
     },
     selected_format() {
 		return (
-			this.print_sel.val() || this.frm.meta.default_print_format || 'Standard'
+			this.pos_profile.print_format
 		);
 	  },
 
     get_mapped_printer() {
 		// returns a list of "print format: printer" mapping filtered by the current print format
 		let print_format_printer_map = this.get_print_format_printer_map();
-		if (print_format_printer_map[this.frm.doctype]) {
-			return print_format_printer_map[this.frm.doctype].filter(
+		if (print_format_printer_map["Sales Invoice"]) {
+			return print_format_printer_map["Sales Invoice"].filter(
 				(printer_map) => printer_map.print_format == this.selected_format()
 			);
 		} else {
